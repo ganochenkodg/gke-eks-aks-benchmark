@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-gemma-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gemma-server
+  template:
+    metadata:
+      labels:
+        ai.gke.io/inference-server: vllm
+    spec:
+      nodeSelector:
+        eks.amazonaws.com/compute-type: auto
+        eks.amazonaws.com/instance-gpu-name: l4
+      containers:
+      - name: inference-server
+        image: vllm/vllm-openai:v0.7.3
+        command: [ "/bin/sh", "-c", "sleep 6000" ]
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "2"
+            memory: "7Gi"
+            ephemeral-storage: "50Gi"
+            nvidia.com/gpu: 1
+          limits:
+            cpu: "2"
+            memory: "7Gi"
+            ephemeral-storage: "50Gi"
+            nvidia.com/gpu: 1
+              #command: ["python3", "-m", "vllm.entrypoints.api_server"]
+              #args:
+              #- --model=$(MODEL_ID)
+              #- --tensor-parallel-size=1
+        env:
+          #- name: MODEL_ID
+          #value: /data/gemma-2b
+        - name: PORT
+          value: "8000"
+        - name: AWS_DEFAULT_REGION
+          value: us-east-1
+      tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Equal
+        value: present
+
+
