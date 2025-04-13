@@ -25,12 +25,17 @@ spec:
         - key: "eks.amazonaws.com/instance-family"
           operator: In
           values:
-          - g6
+          - p4
+        - key: "karpenter.k8s.aws/instance-cpu"
+          operator: In
+          values:
+          - "12"
       taints:
         - key: nvidia.com/gpu
           effect: NoSchedule
       terminationGracePeriod: 24h0m0s
   limits:
-    cpu: 4
-    memory: 16Gi
+    cpu: 12
+    memory: 144Gi
     nvidia.com/gpu: 1
+
