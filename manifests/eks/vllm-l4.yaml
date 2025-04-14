@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vllm-gemma-deployment
+  name: vllm
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gemma-server
+      app: vllm
   template:
     metadata:
       labels:
-        ai.gke.io/inference-server: vllm
+        app: vllm
     spec:
       nodeSelector:
         eks.amazonaws.com/compute-type: auto
@@ -18,30 +18,20 @@ spec:
       containers:
       - name: inference-server
         image: vllm/vllm-openai:v0.7.3
-        command: [ "/bin/sh", "-c", "sleep 6000" ]
+        command: [ "/bin/sh", "-c" ]
+        args: [ "vllm serve unsloth/Meta-Llama-3.1-8B-Instruct --host=0.0.0.0 --port=8000 --dtype=bfloat16 --max-model-len 8192 --disable-log-stats" ]
         imagePullPolicy: IfNotPresent
         resources:
           requests:
             cpu: "2"
-            memory: "7Gi"
+            memory: "12Gi"
             ephemeral-storage: "50Gi"
             nvidia.com/gpu: 1
           limits:
             cpu: "2"
-            memory: "7Gi"
+            memory: "12Gi"
             ephemeral-storage: "50Gi"
             nvidia.com/gpu: 1
-              #command: ["python3", "-m", "vllm.entrypoints.api_server"]
-              #args:
-              #- --model=$(MODEL_ID)
-              #- --tensor-parallel-size=1
-        env:
-          #- name: MODEL_ID
-          #value: /data/gemma-2b
-        - name: PORT
-          value: "8000"
-        - name: AWS_DEFAULT_REGION
-          value: us-east-1
       tolerations:
       - effect: NoSchedule
         key: nvidia.com/gpu
