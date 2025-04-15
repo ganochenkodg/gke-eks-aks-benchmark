@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      nodeSelector:
+        eks.amazonaws.com/compute-type: auto
+        eks.amazonaws.com/instance-gpu-name: a100
+      containers:
+      - name: inference-server
+        image: vllm/vllm-openai:v0.7.3
+        command: [ "/bin/sh", "-c" ]
+        args: [ "vllm serve unsloth/Meta-Llama-3.1-70B-Instruct --host=0.0.0.0 --port=8000 --dtype=bfloat16 --tensor-parallel-size 8 --disable-log-stats" ]
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "24"
+            memory: "280Gi"
+            ephemeral-storage: "300Gi"
+            nvidia.com/gpu: 8
+          limits:
+            cpu: "24"
+            memory: "280Gi"
+            ephemeral-storage: "300Gi"
+            nvidia.com/gpu: 8
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+      tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Equal
+        value: present
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+
