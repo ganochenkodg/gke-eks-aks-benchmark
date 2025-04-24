@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm
+  template:
+    metadata:
+      labels:
+        app: vllm
+    spec:
+      nodeSelector:
+        eks.amazonaws.com/compute-type: auto
+        eks.amazonaws.com/instance-gpu-name: l4
+      containers:
+      - name: inference-server
+        image: vllm/vllm-openai:v0.7.3
+        command: [ "/bin/sh", "-c" ]
+        args: [ "vllm serve unsloth/Meta-Llama-3.1-8B-Instruct --host=0.0.0.0 --port=8000 --dtype=bfloat16 --max-model-len 8192 --disable-log-stats" ]
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: "2"
+            memory: "12Gi"
+            ephemeral-storage: "50Gi"
+            nvidia.com/gpu: 1
+          limits:
+            cpu: "2"
+            memory: "12Gi"
+            ephemeral-storage: "50Gi"
+            nvidia.com/gpu: 1
+      tolerations:
+      - effect: NoSchedule
+        key: nvidia.com/gpu
+        operator: Equal
+        value: present
+      nodeSelector:
+        cloud.google.com/gke-accelerator: nvidia-l4
+        cloud.google.com/gke-gpu-driver-version: latest
+
